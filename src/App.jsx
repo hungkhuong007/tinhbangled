@@ -50,11 +50,7 @@ export default function App() {
             <span className="material-symbols-outlined text-[22px]">notifications</span>
           </button>
           <div className="size-9 rounded-full ring-2 ring-primary/40 ring-offset-2 ring-offset-background-app overflow-hidden bg-surface relative">
-            <img 
-              className="w-full h-full object-cover" 
-              alt="User profile avatar" 
-              src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=d4af37" 
-            />
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=ffffff" alt="Avatar" className="w-full h-full object-cover" />
           </div>
         </div>
       </header>
@@ -70,8 +66,8 @@ export default function App() {
                    <span className="material-symbols-outlined text-9xl text-primary">diamond</span>
                 </div>
                 <div className="relative z-10">
-                  <h3 className="text-primary font-bold text-xl tracking-wide">Chào Bạn!</h3>
-                  <p className="text-sm text-gray-400 mt-1.5 font-light">Hôm nay năng lượng Kim tài vượng.<br/>Chúc một ngày làm việc đắc lộc.</p>
+                  <h3 className="text-primary font-bold text-xl tracking-wide">Xin chào!</h3>
+              <p className="text-sm text-gray-400 mt-1.5 font-light">Giao diện Đen Trắng tối giản,<br/>tập trung số liệu cực kỳ chính xác.</p>
                 </div>
               </div>
             </section>

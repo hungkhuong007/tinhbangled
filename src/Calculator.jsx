@@ -78,6 +78,22 @@ export default function Calculator() {
   const resH = modCountY * currentPreset.resH;
   const activeModules = modCountX * modCountY;
 
+  const gcd = (a, b) => (b === 0 ? a : gcd(b, a % b));
+  const calcAspectRatio = () => {
+    if (resW === 0 || resH === 0) return '0:0';
+    const divisor = gcd(resW, resH);
+    const ratioW = resW / divisor;
+    const ratioH = resH / divisor;
+    
+    const asFloat = resW / resH;
+    if (Math.abs(asFloat - 16/9) < 0.1) return '16:9 (Chuẩn Video)';
+    if (Math.abs(asFloat - 4/3) < 0.1) return '4:3 (Truyền thống)';
+    if (Math.abs(asFloat - 21/9) < 0.1) return '21:9 (Ultrawide)';
+    if (Math.abs(asFloat - 1) < 0.1) return '1:1 (Vuông)';
+    
+    return `${ratioW}:${ratioH}`;
+  };
+
   // Tính Khung (Vật tư Sắt)
   const vBarsCount = modCountX + 1;
   const hBarsCount = Math.ceil(actualHeight) + 1;
@@ -125,7 +141,7 @@ export default function Calculator() {
           new Paragraph({
             children: [
               new TextRun({ text: "Loại màn hình ráp: ", bold: true }),
-              new TextRun({ text: pitch, color: "D4AF37", bold: true }),
+              new TextRun({ text: pitch, color: "000000", bold: true }),
             ],
             spacing: { after: 200 },
           }),
@@ -190,7 +206,7 @@ export default function Calculator() {
               new TableRow({
                 children: [
                   new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: "TỔNG CỘNG HOÀN THIỆN", bold: true })] })] }),
-                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${new Intl.NumberFormat('vi-VN').format(totalArea * pricePerSqm)} VNĐ`, bold: true, color: "D4AF37" })] })] }),
+                  new TableCell({ children: [new Paragraph({ children: [new TextRun({ text: `${new Intl.NumberFormat('vi-VN').format(totalArea * pricePerSqm)} VNĐ`, bold: true, color: "000000" })] })] }),
                 ],
               }),
             ],
@@ -225,6 +241,7 @@ export default function Calculator() {
             </button>
           ))}
         </div>
+        <p className="text-[11px] text-gray-400 mt-3 flex items-center gap-1.5"><span className="material-symbols-outlined text-[14px]">info</span> Kích thước tấm: {currentPreset.w * 1000}x{currentPreset.h * 1000}mm</p>
       </div>
 
       <div className="bg-surface border border-border rounded-xl p-4 space-y-4">
@@ -300,6 +317,7 @@ export default function Calculator() {
             <div>
               <p className="text-[10px] text-gray-400 uppercase">Độ phân giải</p>
               <p className="text-lg font-bold text-gray-100 mt-0.5">{resW} <span className="text-sm text-primary font-normal">x</span> {resH}</p>
+              <p className="text-[10px] text-gray-500 mt-1">Tỷ lệ: {calcAspectRatio()}</p>
             </div>
             <div>
               <p className="text-[10px] text-gray-400 uppercase">Tổng diện tích</p>
