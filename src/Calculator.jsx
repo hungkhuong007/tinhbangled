@@ -10,6 +10,14 @@ const LED_PRESETS = {
   'P5':    { name: 'P5', w: 0.32, h: 0.16, resW: 64, resH: 32, price: 7000000, moduleCost: 120000 },
 };
 
+const PRESET_RESOLUTIONS = {
+  'P2.5': { 'HD': { modX: 10, modY: 12 }, 'FHD': { modX: 15, modY: 17 }, '2K': { modX: 16, modY: 18 }, '4K': { modX: 30, modY: 34 } },
+  'P3': { 'HD': { modX: 20, modY: 12 }, 'FHD': { modX: 30, modY: 17 }, '2K': { modX: 32, modY: 18 }, '4K': { modX: 60, modY: 34 } },
+  'P3.076': { 'HD': { modX: 12, modY: 14 }, 'FHD': { modX: 18, modY: 21 }, '2K': { modX: 20, modY: 22 }, '4K': { modX: 37, modY: 42 } },
+  'P4': { 'HD': { modX: 16, modY: 18 }, 'FHD': { modX: 24, modY: 27 }, '2K': { modX: 26, modY: 29 }, '4K': { modX: 48, modY: 54 } },
+  'P5': { 'HD': { modX: 20, modY: 23 }, 'FHD': { modX: 30, modY: 34 }, '2K': { modX: 32, modY: 36 }, '4K': { modX: 60, modY: 68 } }
+};
+
 export default function Calculator() {
   const [pitch, setPitch] = useState('P2.5');
   const [modCountX, setModCountX] = useState(10);
@@ -51,6 +59,16 @@ export default function Calculator() {
     setPricePerSqm(currentPreset.price);
   }, [pitch]); 
 
+  const applyPreset = (key) => {
+    const preset = PRESET_RESOLUTIONS[pitch]?.[key];
+    if (preset) {
+      setModCountX(preset.modX);
+      setModCountY(preset.modY);
+      setTargetWidth((preset.modX * currentPreset.w).toFixed(3));
+      setTargetHeight((preset.modY * currentPreset.h).toFixed(3));
+    }
+  };
+
   // Calculation Results
   const actualWidth = modCountX * currentPreset.w;
   const actualHeight = modCountY * currentPreset.h;
@@ -60,16 +78,11 @@ export default function Calculator() {
   const resH = modCountY * currentPreset.resH;
   const activeModules = modCountX * modCountY;
 
-  // Tính Nguồn (Mặc định 5V-40A khoảng 3-4 tấm 1 nguồn)
-  const powerSupplyCount = Math.ceil(activeModules / 4); // VD Tạm: 1 Nguồn kéo 4 tấm
-  const receivingCardCount = Math.ceil(activeModules / 12); // VD Tạm: 1 Card kéo 12 tấm
-
-  // Tính Khung (Mặc định sắt 20x20, dư viền 2cm)
-  const frameMargin = 2 / 100;
-  const frameW = actualWidth + frameMargin;
-  const frameH = actualHeight + frameMargin;
+  // Tính Khung (Vật tư Sắt)
   const vBarsCount = modCountX + 1;
   const hBarsCount = Math.ceil(actualHeight) + 1;
+  const vBarsLength = actualHeight + 0.04; // Chiều dài cắt thực: + 4cm
+  const hBarsLength = actualWidth + 0.04; // Chiều dài cắt thực: + 4cm
 
   const handleSaveProfile = () => {
     const projectName = window.prompt("Nhập tên hồ sơ lưu trữ (VD: Đèn Led anh Tùng):");
@@ -140,32 +153,20 @@ export default function Calculator() {
               }),
             ],
           }),
-          new Paragraph({ text: "2. Danh sách Vật tư Khung & Điện:", bold: true, spacing: { before: 200, after: 100 } }),
+          new Paragraph({ text: "2. Danh sách Vật tư Khung Sắt:", bold: true, spacing: { before: 200, after: 100 } }),
           new Table({
             width: { size: 100, type: WidthType.PERCENTAGE },
             rows: [
               new TableRow({
                 children: [
-                  new TableCell({ children: [new Paragraph("Nguồn cấp lưới 5V-40A")] }),
-                  new TableCell({ children: [new Paragraph(`${powerSupplyCount} cái`)] }),
-                ],
-              }),
-              new TableRow({
-                children: [
-                  new TableCell({ children: [new Paragraph("Card điều khiển (Card Nhận)")] }),
-                  new TableCell({ children: [new Paragraph(`${receivingCardCount} cái`)] }),
-                ],
-              }),
-              new TableRow({
-                children: [
                   new TableCell({ children: [new Paragraph("Khung Sắt (Thanh đứng)")] }),
-                  new TableCell({ children: [new Paragraph(`${vBarsCount} thanh (Dài ${actualHeight.toFixed(3)}m)`)] }),
+                  new TableCell({ children: [new Paragraph(`${vBarsCount} thanh (Cắt dài ${vBarsLength.toFixed(3)}m)`)] }),
                 ],
               }),
                new TableRow({
                 children: [
                   new TableCell({ children: [new Paragraph("Khung Sắt (Thanh ngang giằng)")] }),
-                  new TableCell({ children: [new Paragraph(`${hBarsCount} thanh (Dài ${actualWidth.toFixed(3)}m)`)] }),
+                  new TableCell({ children: [new Paragraph(`${hBarsCount} thanh (Cắt dài ${hBarsLength.toFixed(3)}m)`)] }),
                 ],
               }),
             ],
@@ -227,7 +228,19 @@ export default function Calculator() {
       </div>
 
       <div className="bg-surface border border-border rounded-xl p-4 space-y-4">
-        <div className="flex justify-between items-center mb-1">
+        <div>
+          <label className="block text-xs font-semibold text-gray-400 uppercase tracking-widest mb-3">Độ Phân Giải Chuẩn</label>
+          <div className="grid grid-cols-4 gap-2">
+            {['HD', 'FHD', '2K', '4K'].map(res => (
+               <button 
+                 key={res} onClick={() => applyPreset(res)}
+                 className="py-1.5 bg-background-app text-gray-300 text-[11px] font-bold rounded border border-border hover:border-primary/50 transition-colors"
+               >{res}</button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex justify-between items-center mb-1 pt-3 border-t border-border/50">
           <label className="text-xs font-semibold text-gray-400 uppercase tracking-widest">Kích Thước Dự Kiến (m)</label>
         </div>
         <div className="grid grid-cols-2 gap-3">
@@ -304,9 +317,41 @@ export default function Calculator() {
 
   const renderFrame = () => (
     <div className="space-y-4 animate-in fade-in duration-300 pb-6">
+      
+      {/* Visual Simulation */}
+      <div className="bg-surface border border-border rounded-xl p-5 relative overflow-hidden">
+        <h3 className="text-xs font-semibold text-primary uppercase tracking-widest mb-4 flex items-center gap-2">
+          <span className="material-symbols-outlined text-sm">tv</span>
+          Mô phỏng lắp đặt
+        </h3>
+        <div className="flex justify-center items-center py-4">
+          <div className="relative border-4 border-primary/40 bg-[#060606] shadow-2xl shadow-primary/20" style={{
+            width: actualWidth >= actualHeight ? '100%' : `${(actualWidth / actualHeight) * 100}%`,
+            height: actualHeight >= actualWidth ? '100%' : 'auto',
+            aspectRatio: `${actualWidth} / ${actualHeight}`,
+            maxHeight: '180px',
+          }}>
+             {/* Grid for extra immersive feeling */}
+             <div className="absolute inset-0 opacity-[0.1]" style={{
+               backgroundImage: `linear-gradient(rgba(212, 175, 55, 0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(212, 175, 55, 0.5) 1px, transparent 1px)`,
+               backgroundSize: `${100/Math.max(1, modCountX)}% ${100/Math.max(1, modCountY)}%`
+             }}></div>
+
+             <div className="absolute inset-0 flex items-center justify-center flex-col opacity-80 z-10">
+                 <span className="font-mono text-sm font-bold text-gray-100">{resW} <span className="text-primary text-[10px]">x</span> {resH}</span>
+                 <span className="text-[9px] text-gray-400 uppercase tracking-widest mt-1">Pixels</span>
+             </div>
+          </div>
+        </div>
+        <div className="flex justify-between text-xs text-gray-400 mt-4 font-mono px-2">
+          <span>Ngang: {actualWidth.toFixed(3)}m ({modCountX} tấm)</span>
+          <span>Cao: {actualHeight.toFixed(3)}m ({modCountY} tấm)</span>
+        </div>
+      </div>
+
       <div className="bg-surface border border-border rounded-xl p-5">
         <h3 className="text-xs font-semibold text-primary uppercase tracking-widest mb-4 flex items-center gap-2">
-          <span className="material-symbols-outlined text-sm">construction</span>
+          <span className="material-symbols-outlined text-sm">polyline</span>
           Bản vẽ Cắt Sắt & Khung
         </h3>
         
@@ -314,55 +359,37 @@ export default function Calculator() {
           <div className="flex justify-between items-center border-b border-border/50 pb-3">
             <div>
               <p className="text-sm font-semibold text-gray-200">Kích thước Viền Ngoài</p>
-              <p className="text-[11px] text-gray-500 mt-0.5">Phủ bì (+2cm ốp viền)</p>
+              <p className="text-[11px] text-gray-500 mt-0.5">Kích thước thực màn hình (0 nối)</p>
             </div>
             <div className="text-right">
-              <p className="font-mono text-lg font-bold text-primary">{frameW.toFixed(3)}m x {frameH.toFixed(3)}m</p>
+              <p className="font-mono text-lg font-bold text-primary">{actualWidth.toFixed(3)}m x {actualHeight.toFixed(3)}m</p>
             </div>
           </div>
 
           <div className="flex justify-between items-center border-b border-border/50 pb-3">
             <div>
               <p className="text-sm font-semibold text-gray-200">Trục Ngang (Đứng)</p>
-              <p className="text-[11px] text-gray-500 mt-0.5">Ghép {modCountX} tấm dọc</p>
+              <p className="text-[11px] text-gray-500 mt-0.5">Ghép {modCountX} tấm ngang</p>
             </div>
             <div className="text-right">
               <p className="text-sm font-bold text-gray-200">{vBarsCount} <span className="font-normal text-xs text-gray-500">cây</span></p>
-              <p className="font-mono text-xs text-primary mt-0.5">Dài: {actualHeight.toFixed(3)}m</p>
+              <p className="font-mono text-xs text-primary mt-0.5">Cắt dài: {vBarsLength.toFixed(3)}m (+4cm)</p>
             </div>
           </div>
 
           <div className="flex justify-between items-center pb-1">
             <div>
               <p className="text-sm font-semibold text-gray-200">Thanh Giằng (Ngang)</p>
-              <p className="text-[11px] text-gray-500 mt-0.5">Chống võng {modCountY} hàng</p>
+              <p className="text-[11px] text-gray-500 mt-0.5">Ghép {modCountY} tấm dọc</p>
             </div>
             <div className="text-right">
               <p className="text-sm font-bold text-gray-200">{hBarsCount} <span className="font-normal text-xs text-gray-500">cây</span></p>
-              <p className="font-mono text-xs text-primary mt-0.5">Dài: {actualWidth.toFixed(3)}m</p>
+              <p className="font-mono text-xs text-primary mt-0.5">Cắt dài: {hBarsLength.toFixed(3)}m (+4cm)</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="bg-surface border border-border rounded-xl p-5">
-         <h3 className="text-xs font-semibold text-primary uppercase tracking-widest mb-4 flex items-center gap-2">
-          <span className="material-symbols-outlined text-sm">electrical_services</span>
-          Vật tư Điện tử (Dự tính)
-        </h3>
-        <div className="grid grid-cols-2 gap-3">
-           <div className="bg-background-app p-3 rounded-lg border border-border text-center">
-             <span className="material-symbols-outlined text-gray-400 mb-1">power</span>
-             <p className="text-[10px] text-gray-500 uppercase">Nguồn 5V-40A</p>
-             <p className="text-xl font-bold text-gray-100">{powerSupplyCount} <span className="text-xs font-normal">cục</span></p>
-           </div>
-           <div className="bg-background-app p-3 rounded-lg border border-border text-center">
-             <span className="material-symbols-outlined text-gray-400 mb-1">dns</span>
-             <p className="text-[10px] text-gray-500 uppercase">Card Nhận</p>
-             <p className="text-xl font-bold text-gray-100">{receivingCardCount} <span className="text-xs font-normal">tấm</span></p>
-           </div>
-        </div>
-      </div>
     </div>
   );
 
