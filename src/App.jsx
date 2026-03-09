@@ -1,8 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Calculator from './Calculator';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('home');
+  const [savedProjects, setSavedProjects] = useState([]);
+
+  useEffect(() => {
+    const loadProjects = () => {
+      const projects = JSON.parse(localStorage.getItem('ledProjects') || '[]');
+      setSavedProjects(projects);
+    };
+    
+    // Load ban đầu
+    loadProjects();
+
+    // Lắng nghe thay đổi nếu tab khác lưu hồ sơ
+    window.addEventListener('storage', loadProjects);
+    
+    // Custom event để cập nhật ngay khi lưu ở Calculator Component
+    const interval = setInterval(loadProjects, 1000);
+
+    return () => {
+      window.removeEventListener('storage', loadProjects);
+      clearInterval(interval);
+    };
+  }, []);
+
+  const handleDeleteProject = (id) => {
+    if(window.confirm('Bạn có chắc chắn muốn xóa hồ sơ này?')) {
+      const updated = savedProjects.filter(p => p.id !== id);
+      setSavedProjects(updated);
+      localStorage.setItem('ledProjects', JSON.stringify(updated));
+    }
+  };
 
   return (
     <div className="w-full max-w-[420px] bg-background-app text-gray-100 min-h-[100dvh] flex flex-col font-sans relative shadow-2xl shadow-primary/10 border-x border-border mx-auto overflow-hidden">
@@ -111,45 +141,40 @@ export default function App() {
             {/* Recent Projects Section */}
             <section className="px-5 pt-8">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-base font-semibold text-gray-200 uppercase tracking-wider text-xs">Lịch sử thiết kế</h2>
-                <button className="text-primary text-xs font-semibold hover:underline">Xem lịch sử</button>
+                <h2 className="text-base font-semibold text-gray-200 uppercase tracking-wider text-xs">Hồ sơ gần đây</h2>
+                <button onClick={() => setActiveTab('projects')} className="text-primary text-xs font-semibold hover:underline">Xem tất cả</button>
               </div>
               
               <div className="flex gap-4 overflow-x-auto no-scrollbar pb-4 -mx-5 px-5 snap-x">
                 
-                {/* Project Card 1 */}
-                <div className="min-w-[260px] snap-center bg-surface rounded-2xl border border-border overflow-hidden shadow-lg shadow-black/40">
-                  <div className="h-28 w-full bg-primary/5 relative border-b border-border/50">
-                    <div className="absolute inset-0 flex items-center justify-center bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/10 to-transparent">
-                      <span className="material-symbols-outlined text-5xl text-primary/30">wall_art</span>
-                    </div>
+                {savedProjects.length === 0 ? (
+                  <div className="w-full text-center py-8 text-gray-500 text-sm italic">
+                    Chưa có hồ sơ nào được lưu.
                   </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold text-gray-100">Bảng hiệu P2.5 Indoor</h3>
-                    <p className="text-xs text-gray-400 mt-1.5 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-primary"></span> Ngang 5.76m x Cao 3.84m</p>
-                    <div className="mt-4 flex justify-between items-center border-t border-border pt-3">
-                      <span className="text-[10px] uppercase font-bold text-primary px-2.5 py-1 rounded bg-primary/10 tracking-widest">Đã xem</span>
-                      <span className="text-[10px] text-gray-500 font-medium">Hôm qua</span>
+                ) : (
+                  savedProjects.slice(0, 5).map(project => (
+                    <div key={project.id} className="min-w-[260px] snap-center bg-surface rounded-2xl border border-border overflow-hidden shadow-lg shadow-black/40">
+                      <div className="h-28 w-full bg-primary/5 relative border-b border-border/50">
+                        <div className="absolute inset-0 flex items-center justify-center bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/10 to-transparent">
+                          <span className="material-symbols-outlined text-5xl text-primary/30">wall_art</span>
+                        </div>
+                      </div>
+                      <div className="p-4">
+                        <h3 className="font-semibold text-gray-100 truncate">{project.name}</h3>
+                        <p className="text-xs text-gray-400 mt-1.5 flex items-center gap-1.5">
+                          <span className="w-1.5 h-1.5 rounded-full bg-primary"></span> 
+                          {project.pitch} • {project.actualWidth.toFixed(2)}m x {project.actualHeight.toFixed(2)}m
+                        </p>
+                        <div className="mt-4 flex justify-between items-center border-t border-border pt-3">
+                          <span className="text-[10px] uppercase font-bold text-primary px-2.5 py-1 rounded bg-primary/10 tracking-widest">
+                            {new Intl.NumberFormat('vi-VN').format(project.totalPrice)} đ
+                          </span>
+                          <span className="text-[9px] text-gray-500 font-medium">{project.date.split(' ')[1]}</span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-
-                {/* Project Card 2 */}
-                <div className="min-w-[260px] snap-center bg-surface rounded-2xl border border-border overflow-hidden shadow-lg shadow-black/40">
-                  <div className="h-28 w-full bg-primary/5 relative border-b border-border/50">
-                    <div className="absolute inset-0 flex items-center justify-center bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-primary/10 to-transparent">
-                      <span className="material-symbols-outlined text-5xl text-primary/30">storefront</span>
-                    </div>
-                  </div>
-                  <div className="p-4">
-                    <h3 className="font-semibold text-gray-100">Màn hình P4 Outdoor</h3>
-                    <p className="text-xs text-gray-400 mt-1.5 flex items-center gap-1.5"><span className="w-1.5 h-1.5 rounded-full bg-primary"></span> Ngang 3.2m x Cao 1.6m</p>
-                    <div className="mt-4 flex justify-between items-center border-t border-border pt-3">
-                      <span className="text-[10px] uppercase font-bold text-gray-300 px-2.5 py-1 rounded bg-gray-700 tracking-widest">Bản thảo</span>
-                      <span className="text-[10px] text-gray-500 font-medium">3 ngày trước</span>
-                    </div>
-                  </div>
-                </div>
+                  ))
+                )}
 
               </div>
             </section>
@@ -160,6 +185,64 @@ export default function App() {
         {activeTab === 'calculator' && (
           <div className="animate-in slide-in-from-right-4 fade-in duration-300 h-full">
             <Calculator />
+          </div>
+        )}
+
+        {/* Màn hình Hồ sơ (Lịch sử) */}
+        {activeTab === 'projects' && (
+          <div className="animate-in fade-in duration-300 px-5 pt-6 h-full flex flex-col">
+            <h2 className="text-lg font-bold mb-6 text-gray-100 flex items-center gap-2">
+              <span className="material-symbols-outlined text-primary">folder_open</span>
+              Hồ sơ đã lưu
+            </h2>
+            
+            <div className="flex-1 overflow-y-auto space-y-4 pb-20 no-scrollbar">
+              {savedProjects.length === 0 ? (
+                <div className="text-center py-10 text-gray-500">
+                  <span className="material-symbols-outlined text-4xl opacity-50 mb-3 text-primary">inventory_2</span>
+                  <p>Danh sách hồ sơ trống</p>
+                </div>
+              ) : (
+                savedProjects.map(project => (
+                  <div key={project.id} className="bg-surface border border-border rounded-xl p-4 relative group">
+                    <button 
+                      onClick={() => handleDeleteProject(project.id)}
+                      className="absolute top-4 right-4 text-gray-500 hover:text-red-400 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <span className="material-symbols-outlined text-xl">delete</span>
+                    </button>
+                    <div>
+                      <h3 className="font-bold text-primary pr-8">{project.name}</h3>
+                      <div className="text-[11px] text-gray-400 mt-1 font-mono">{project.date}</div>
+                    </div>
+                    
+                    <div className="mt-4 grid grid-cols-2 gap-y-2 gap-x-4 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Loại LED:</span>
+                        <span className="font-semibold text-gray-200">{project.pitch}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Số lượng:</span>
+                        <span className="font-semibold text-gray-200">{project.activeModules} tấm</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Ngang:</span>
+                        <span className="font-semibold text-gray-200">{project.actualWidth.toFixed(2)}m</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Cao:</span>
+                        <span className="font-semibold text-gray-200">{project.actualHeight.toFixed(2)}m</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 pt-3 border-t border-border flex justify-between items-center">
+                       <span className="text-xs text-gray-400">Tổng Vốn</span>
+                       <span className="font-bold text-gray-100">{new Intl.NumberFormat('vi-VN').format(project.totalPrice)} đ</span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
         )}
 

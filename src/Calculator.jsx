@@ -71,6 +71,33 @@ export default function Calculator() {
   const vBarsCount = modCountX + 1;
   const hBarsCount = Math.ceil(actualHeight) + 1;
 
+  const handleSaveProfile = () => {
+    const projectName = window.prompt("Nhập tên hồ sơ lưu trữ (VD: Đèn Led anh Tùng):");
+    if (!projectName) return;
+
+    const newProject = {
+      id: Date.now(),
+      name: projectName,
+      date: new Date().toLocaleString('vi-VN'),
+      pitch,
+      modCountX,
+      modCountY,
+      actualWidth,
+      actualHeight,
+      resW,
+      resH,
+      activeModules,
+      totalArea,
+      pricePerSqm,
+      totalPrice: totalArea * pricePerSqm
+    };
+
+    const savedProjects = JSON.parse(localStorage.getItem('ledProjects') || '[]');
+    savedProjects.unshift(newProject);
+    localStorage.setItem('ledProjects', JSON.stringify(savedProjects));
+    alert('Đã lưu hồ sơ thành công!');
+  };
+
   const handleExportDocx = async () => {
     const doc = new Document({
       sections: [{
@@ -364,9 +391,14 @@ export default function Calculator() {
         />
       </div>
       
-      <button onClick={handleExportDocx} className="w-full py-3.5 bg-surface border border-primary/50 text-primary font-bold rounded-xl hover:bg-primary/10 transition-colors flex items-center justify-center gap-2 active:scale-95 shadow-lg shadow-primary/10">
+      <button onClick={handleExportDocx} className="w-full py-3.5 bg-surface border border-primary/50 text-primary font-bold rounded-xl hover:bg-primary/10 transition-colors flex items-center justify-center gap-2 active:scale-95 shadow-lg shadow-primary/10 mb-3">
         <span className="material-symbols-outlined">download</span>
         Tải Xuất Báo Giá (Bản .Docx)
+      </button>
+
+      <button onClick={handleSaveProfile} className="w-full py-3.5 bg-primary text-black font-bold rounded-xl hover:bg-primary-dark transition-colors flex items-center justify-center gap-2 active:scale-95 shadow-lg shadow-primary/20">
+        <span className="material-symbols-outlined">save</span>
+        Lưu Hồ Sơ Tính Toán
       </button>
     </div>
   );
