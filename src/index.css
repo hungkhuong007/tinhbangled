@@ -1,11 +1,11 @@
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #ffffff; /* Trắng tối giản (Monochrome) */
-  --color-primary-dark: #cccccc;
-  --color-background-app: #0a0a0a; /* Đen sâu */
-  --color-surface: #141414; /* Xám đen nền card */
-  --color-border: rgba(255, 255, 255, 0.15); /* Viền xám nhạt */
+  --color-primary: #3b82f6; /* Xanh nước biển hiện đại */
+  --color-primary-dark: #2563eb;
+  --color-background-app: #121212; /* Warm Dark (Đen ấm dịu mắt) */
+  --color-surface: #1e1e1e; /* Màu nền thẻ xám ấm */
+  --color-border: rgba(255, 255, 255, 0.08); /* Viền xám siêu mờ */
   --font-display: "Inter", sans-serif;
   --font-sans: "Inter", sans-serif;
 }

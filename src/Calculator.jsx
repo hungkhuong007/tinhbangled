@@ -234,7 +234,7 @@ export default function Calculator() {
               key={key} 
               onClick={() => setPitch(key)}
               className={`py-2 rounded-lg text-sm font-semibold border transition-all ${
-                pitch === key ? 'bg-primary text-black border-primary shadow-lg shadow-primary/20' : 'bg-background-app text-gray-300 border-border hover:border-primary/50'
+                pitch === key ? 'bg-primary text-white border-primary shadow-lg shadow-primary/20' : 'bg-background-app text-gray-300 border-border hover:border-primary/50'
               }`}
             >
               {key}
@@ -413,7 +413,7 @@ export default function Calculator() {
 
   const renderFinance = () => (
     <div className="space-y-4 animate-in fade-in duration-300 pb-6">
-      <div className="bg-gradient-to-br from-primary to-primary-dark rounded-xl p-5 shadow-lg shadow-primary/20 relative overflow-hidden text-black z-0">
+      <div className="bg-gradient-to-br from-primary to-primary-dark rounded-xl p-5 shadow-lg shadow-primary/20 relative overflow-hidden text-white z-0">
          <div className="absolute top-0 right-0 p-2 opacity-20 -z-10">
           <span className="material-symbols-outlined text-9xl">attach_money</span>
         </div>
@@ -441,7 +441,7 @@ export default function Calculator() {
         Tải Xuất Báo Giá (Bản .Docx)
       </button>
 
-      <button onClick={handleSaveProfile} className="w-full py-3.5 bg-primary text-black font-bold rounded-xl hover:bg-primary-dark transition-colors flex items-center justify-center gap-2 active:scale-95 shadow-lg shadow-primary/20">
+      <button onClick={handleSaveProfile} className="w-full py-3.5 bg-primary text-white font-bold rounded-xl hover:bg-primary-dark transition-colors flex items-center justify-center gap-2 active:scale-95 shadow-lg shadow-primary/20">
         <span className="material-symbols-outlined">save</span>
         Lưu Hồ Sơ Tính Toán
       </button>
@@ -455,19 +455,19 @@ export default function Calculator() {
       <div className="px-5 mb-5 flex gap-2">
         <button 
           onClick={() => setCalcTab('config')}
-          className={`flex-1 py-2 text-[11px] uppercase tracking-widest font-bold rounded-lg transition-colors ${calcTab === 'config' ? 'bg-primary text-black' : 'bg-surface text-gray-400 border border-border'}`}
+          className={`flex-1 py-2 text-[11px] uppercase tracking-widest font-bold rounded-lg transition-colors ${calcTab === 'config' ? 'bg-primary text-white' : 'bg-surface text-gray-400 border border-border'}`}
         >
           Cấu hình
         </button>
         <button 
           onClick={() => setCalcTab('frame')}
-          className={`flex-1 py-2 text-[11px] uppercase tracking-widest font-bold rounded-lg transition-colors ${calcTab === 'frame' ? 'bg-primary text-black' : 'bg-surface text-gray-400 border border-border'}`}
+          className={`flex-1 py-2 text-[11px] uppercase tracking-widest font-bold rounded-lg transition-colors ${calcTab === 'frame' ? 'bg-primary text-white' : 'bg-surface text-gray-400 border border-border'}`}
         >
           Vật Tư
         </button>
         <button 
           onClick={() => setCalcTab('finance')}
-          className={`flex-1 py-2 text-[11px] uppercase tracking-widest font-bold rounded-lg transition-colors ${calcTab === 'finance' ? 'bg-primary text-black' : 'bg-surface text-gray-400 border border-border'}`}
+          className={`flex-1 py-2 text-[11px] uppercase tracking-widest font-bold rounded-lg transition-colors ${calcTab === 'finance' ? 'bg-primary text-white' : 'bg-surface text-gray-400 border border-border'}`}
         >
           Tài Chính
         </button>

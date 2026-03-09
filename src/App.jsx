@@ -50,7 +50,7 @@ export default function App() {
             <span className="material-symbols-outlined text-[22px]">notifications</span>
           </button>
           <div className="size-9 rounded-full ring-2 ring-primary/40 ring-offset-2 ring-offset-background-app overflow-hidden bg-surface relative">
-            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=ffffff" alt="Avatar" className="w-full h-full object-cover" />
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix&backgroundColor=3b82f6" alt="Avatar" className="w-full h-full object-cover" />
           </div>
         </div>
       </header>
@@ -67,7 +67,7 @@ export default function App() {
                 </div>
                 <div className="relative z-10">
                   <h3 className="text-primary font-bold text-xl tracking-wide">Xin chào!</h3>
-              <p className="text-sm text-gray-400 mt-1.5 font-light">Giao diện Đen Trắng tối giản,<br/>tập trung số liệu cực kỳ chính xác.</p>
+                  <p className="text-sm text-gray-400 mt-1.5 font-light leading-relaxed">Tông màu tối ấm áp (Warm Dark),<br/>giảm mỏi mắt & đề cao tính chuyên nghiệp.</p>
                 </div>
               </div>
             </section>
@@ -246,14 +246,12 @@ export default function App() {
 
       {/* Floating Action Button */}
       {activeTab === 'home' && (
-        <div className="absolute right-5 bottom-24 z-30">
-          <button 
-           onClick={() => setActiveTab('calculator')}
-           className="size-14 bg-gradient-to-br from-primary to-primary-dark text-black rounded-full shadow-lg shadow-primary/30 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
-          >
-            <span className="material-symbols-outlined text-3xl font-light">add</span>
-          </button>
-        </div>
+        <button 
+          onClick={() => setActiveTab('calculator')}
+          className="absolute bottom-24 right-5 size-14 bg-primary text-white rounded-2xl shadow-[0_8px_30px_rgb(59,130,246,0.3)] flex items-center justify-center hover:bg-primary-dark transition-all active:scale-90 z-50 hover:-translate-y-1"
+        >
+          <span className="material-symbols-outlined text-3xl font-light">add</span>
+        </button>
       )}
 
       {/* Bottom Navigation Bar */}
