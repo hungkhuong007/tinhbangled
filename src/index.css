@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #d4af37; /* Mệnh Kim: Vàng Ánh Kim (Luxury Gold) */
+  --color-primary-dark: #b8962d;
+  --color-background-app: #0d0d0d; /* Tối sâu thẩm, làm nổi bật màu vàng */
+  --color-surface: #171717; /* Màu nền của các thẻ card */
+  --color-border: rgba(212, 175, 55, 0.15); /* Viền vàng tinh tế, mờ */
+  --font-display: "Inter", sans-serif;
+  --font-sans: "Inter", sans-serif;
+}
+
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: #000000; /* Nền ngoài cùng là đen tuyền để làm viền cho app */
+  min-height: 100vh;
+  margin: 0;
+  display: flex;
+  justify-content: center; /* Căn giữa app trên màn hình PC */
+}
+
+/* Ẩn thanh cuộn cho danh sách */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

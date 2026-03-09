@@ -1,0 +1,595 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { Calculator, Monitor, Ruler, Layers, Settings, Maximize, Plus, Minus, Info, Banknote, TrendingUp, PackageOpen, Wrench, Scissors } from 'lucide-react';
+
+const LED_PRESETS = {
+  'P2.5':  { name: 'P2.5', w: 0.32, h: 0.16, resW: 128, resH: 64, price: 14500000, moduleCost: 245000 },
+  'P3':    { name: 'P3', w: 0.192, h: 0.192, resW: 64, resH: 64, price: 12500000, moduleCost: 195000 },
+  'P3.076': { name: 'P3.076', w: 0.32, h: 0.16, resW: 104, resH: 52, price: 11000000, moduleCost: 180000 },
+  'P4':    { name: 'P4', w: 0.32, h: 0.16, resW: 80, resH: 40, price: 9000000, moduleCost: 150000 },
+  'P5':    { name: 'P5', w: 0.32, h: 0.16, resW: 64, resH: 32, price: 7000000, moduleCost: 120000 },
+};
+
+const PRESET_RESOLUTIONS = {
+  'P2.5': {
+    'HD': { modX: 10, modY: 12 },
+    'Full HD': { modX: 15, modY: 17 },
+    '2K': { modX: 16, modY: 18 },
+    '4K': { modX: 30, modY: 34 }
+  },
+  'P3': {
+    'HD': { modX: 20, modY: 12 },
+    'Full HD': { modX: 30, modY: 17 },
+    '2K': { modX: 32, modY: 18 },
+    '4K': { modX: 60, modY: 34 }
+  },
+  'P3.076': {
+    'HD': { modX: 12, modY: 14 },
+    'Full HD': { modX: 18, modY: 21 },
+    '2K': { modX: 20, modY: 22 },
+    '4K': { modX: 37, modY: 42 }
+  },
+  'P4': {
+    'HD': { modX: 16, modY: 18 },
+    'Full HD': { modX: 24, modY: 27 },
+    '2K': { modX: 26, modY: 29 },
+    '4K': { modX: 48, modY: 54 }
+  },
+  'P5': {
+    'HD': { modX: 20, modY: 23 },
+    'Full HD': { modX: 30, modY: 34 },
+    '2K': { modX: 32, modY: 36 },
+    '4K': { modX: 60, modY: 68 }
+  }
+};
+
+export default function App() {
+  const [pitch, setPitch] = useState('P2.5');
+  
+  // Trạng thái lưu số lượng tấm ngang và dọc
+  const [modCountX, setModCountX] = useState(10);
+  const [modCountY, setModCountY] = useState(10);
+
+  // Trạng thái nhập kích thước dự kiến (để hỗ trợ tính ngược ra số tấm)
+  const [targetWidth, setTargetWidth] = useState(3.2);
+  const [targetHeight, setTargetHeight] = useState(1.6);
+  
+  // Trạng thái đơn giá trên mỗi mét vuông
+  const [pricePerSqm, setPricePerSqm] = useState(LED_PRESETS['P2.5'].price);
+
+  // Trạng thái tính vốn và lợi nhuận
+  const [moduleCost, setModuleCost] = useState(LED_PRESETS['P2.5'].moduleCost);
+  const [spareModules, setSpareModules] = useState(2);
+  const [otherCost, setOtherCost] = useState(8500000); // Mặc định ước lượng chi phí Nguồn, Card, Khung...
+
+  // Trạng thái thông số Khung & Sắt
+  const [frameMargin, setFrameMargin] = useState(2); // Thêm viền mỗi chiều (cm)
+  const [ironMargin, setIronMargin] = useState(4); // Cắt dư thanh sắt (cm)
+  const [hBarsCount, setHBarsCount] = useState(3); // Số thanh giằng ngang
+
+  const currentPreset = LED_PRESETS[pitch];
+
+  // Hàm áp dụng nhanh cấu hình chuẩn theo độ phân giải
+  const applyPresetResolution = (resKey) => {
+    const presetData = PRESET_RESOLUTIONS[pitch]?.[resKey];
+    if (presetData) {
+      setModCountX(presetData.modX);
+      setModCountY(presetData.modY);
+      setTargetWidth((presetData.modX * currentPreset.w).toFixed(3));
+      setTargetHeight((presetData.modY * currentPreset.h).toFixed(3));
+    }
+  };
+
+  // Hàm xử lý khi người dùng nhập kích thước dự kiến (mét)
+  const handleTargetWidthChange = (val) => {
+    const num = parseFloat(val);
+    setTargetWidth(val);
+    if (!isNaN(num) && num > 0) {
+      setModCountX(Math.max(1, Math.round(num / currentPreset.w)));
+    }
+  };
+
+  const handleTargetHeightChange = (val) => {
+    const num = parseFloat(val);
+    setTargetHeight(val);
+    if (!isNaN(num) && num > 0) {
+      setModCountY(Math.max(1, Math.round(num / currentPreset.h)));
+    }
+  };
+
+  // Cập nhật lại số tấm nếu người dùng đổi loại Pitch màn hình
+  useEffect(() => {
+    if (!isNaN(parseFloat(targetWidth)) && parseFloat(targetWidth) > 0) {
+       setModCountX(Math.max(1, Math.round(parseFloat(targetWidth) / currentPreset.w)));
+    }
+    if (!isNaN(parseFloat(targetHeight)) && parseFloat(targetHeight) > 0) {
+       setModCountY(Math.max(1, Math.round(parseFloat(targetHeight) / currentPreset.h)));
+    }
+    
+    // Tự động cập nhật đơn giá bán và giá nhập khi đổi loại màn hình
+    setPricePerSqm(currentPreset.price);
+    setModuleCost(currentPreset.moduleCost);
+  }, [pitch]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Các chỉ số tính toán thực tế
+  const actualWidth = modCountX * currentPreset.w;
+  const actualHeight = modCountY * currentPreset.h;
+  const totalArea = actualWidth * actualHeight;
+  
+  // Tự động gợi ý số thanh sắt ngang (khoảng 1 mét 1 thanh)
+  useEffect(() => {
+    setHBarsCount(Math.ceil(actualHeight) + 1);
+  }, [actualHeight]);
+
+  // Tính toán Khung viền & Sắt
+  const frameW = actualWidth + (frameMargin / 100);
+  const frameH = actualHeight + (frameMargin / 100);
+  const vBarsCount = modCountX + 1;
+  const vBarsLength = actualHeight + (ironMargin / 100);
+  const hBarsLength = actualWidth + (ironMargin / 100);
+  
+  // Tính tổng chi phí dự kiến (Doanh thu bán ra)
+  const estimatedCost = totalArea * pricePerSqm;
+  
+  const resW = modCountX * currentPreset.resW;
+  const resH = modCountY * currentPreset.resH;
+  const totalPixels = resW * resH;
+  
+  // Tính toán Tấm & Vốn
+  const activeModules = modCountX * modCountY;
+  const totalModulesForOrder = activeModules + spareModules;
+  const totalModuleCost = totalModulesForOrder * moduleCost;
+  const totalInvestment = totalModuleCost + otherCost; // Tổng vốn
+  
+  // Tính toán lợi nhuận
+  const grossProfit = estimatedCost - totalInvestment;
+  const profitMargin = estimatedCost > 0 ? (grossProfit / estimatedCost) * 100 : 0;
+
+  // Tính tỷ lệ màn hình (Aspect Ratio) xấp xỉ
+  const gcd = (a, b) => (b === 0 ? a : gcd(b, a % b));
+  const calcAspectRatio = () => {
+    const divisor = gcd(resW, resH);
+    const ratioW = resW / divisor;
+    const ratioH = resH / divisor;
+    
+    // Làm tròn để nhận diện các tỷ lệ phổ biến như 16:9, 4:3
+    const asFloat = resW / resH;
+    if (Math.abs(asFloat - 16/9) < 0.1) return '16:9 (Chuẩn Video)';
+    if (Math.abs(asFloat - 4/3) < 0.1) return '4:3 (Truyền thống)';
+    if (Math.abs(asFloat - 21/9) < 0.1) return '21:9 (Ultrawide)';
+    if (Math.abs(asFloat - 1) < 0.1) return '1:1 (Vuông)';
+    
+    return `${ratioW}:${ratioH}`;
+  };
+
+  return (
+    <div className="min-h-screen bg-slate-50 text-slate-800 p-4 md:p-8 font-sans">
+      <div className="max-w-6xl mx-auto space-y-6">
+        
+        {/* Header */}
+        <header className="flex items-center gap-3 bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+          <div className="p-3 bg-blue-600 rounded-xl text-white">
+            <Calculator size={28} />
+          </div>
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900">Tính Toán Kích Thước Màn Hình LED</h1>
+            <p className="text-slate-500">Hỗ trợ tính số tấm, độ phân giải và kích thước thi công chuẩn xác</p>
+          </div>
+        </header>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Cột Trái: Bảng Nhập Liệu */}
+          <div className="lg:col-span-1 space-y-6">
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Settings size={20} className="text-blue-500" />
+                Thông số yêu cầu
+              </h2>
+              
+              <div className="space-y-5">
+                {/* Loại màn hình */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">Loại Màn Hình (Pixel Pitch)</label>
+                  <select 
+                    value={pitch} 
+                    onChange={(e) => setPitch(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 text-slate-900 rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 outline-none transition-all"
+                  >
+                    {Object.keys(LED_PRESETS).map(key => (
+                      <option key={key} value={key}>Màn hình trong nhà {key}</option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-slate-500 mt-2 flex items-center gap-1">
+                    <Info size={12}/> Kích thước tấm: {currentPreset.w * 1000}x{currentPreset.h * 1000}mm
+                  </p>
+                </div>
+
+                {/* Đơn giá Bán / m2 */}
+                <div className="bg-blue-50/50 p-3 rounded-xl border border-blue-100">
+                  <label className="block text-sm font-semibold text-blue-800 mb-1">Đơn giá BÁN / m² (VNĐ)</label>
+                  <input 
+                    type="number" 
+                    value={pricePerSqm}
+                    onChange={(e) => setPricePerSqm(Number(e.target.value))}
+                    min="0"
+                    step="100000"
+                    className="w-full bg-white border border-blue-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 transition-all font-mono text-blue-900 font-medium"
+                  />
+                </div>
+
+                {/* Kích thước dự kiến */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Dài dự kiến (m)</label>
+                    <input 
+                      type="number" 
+                      value={targetWidth}
+                      onChange={(e) => handleTargetWidthChange(e.target.value)}
+                      step="0.1"
+                      min="0"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-slate-700 mb-1">Cao dự kiến (m)</label>
+                    <input 
+                      type="number" 
+                      value={targetHeight}
+                      onChange={(e) => handleTargetHeightChange(e.target.value)}
+                      step="0.1"
+                      min="0"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2.5 outline-none focus:ring-2 focus:ring-blue-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <hr className="border-slate-100" />
+
+                {/* Chọn nhanh theo độ phân giải */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-2">Cấu hình chuẩn theo độ phân giải</label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {['HD', 'Full HD', '2K', '4K'].map(res => (
+                      <button 
+                        key={res}
+                        onClick={() => applyPresetResolution(res)}
+                        className="p-2 text-sm font-semibold text-blue-700 bg-blue-50 hover:bg-blue-600 hover:text-white border border-blue-200 hover:border-blue-600 rounded-lg transition-all shadow-sm"
+                      >
+                        {res}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <hr className="border-slate-100" />
+
+                {/* Tinh chỉnh số tấm */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-3">Tinh chỉnh số lượng Tấm (Module)</label>
+                  
+                  <div className="flex items-center justify-between mb-3 bg-slate-50 p-2 rounded-lg border border-slate-100">
+                    <span className="text-sm text-slate-600 pl-2">Số tấm ngang:</span>
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => setModCountX(Math.max(1, modCountX - 1))} className="p-1.5 bg-white border border-slate-200 rounded hover:bg-slate-100 text-slate-600"><Minus size={16}/></button>
+                      <span className="w-8 text-center font-semibold">{modCountX}</span>
+                      <button onClick={() => setModCountX(modCountX + 1)} className="p-1.5 bg-white border border-slate-200 rounded hover:bg-slate-100 text-slate-600"><Plus size={16}/></button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between bg-slate-50 p-2 rounded-lg border border-slate-100">
+                    <span className="text-sm text-slate-600 pl-2">Số tấm dọc:</span>
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => setModCountY(Math.max(1, modCountY - 1))} className="p-1.5 bg-white border border-slate-200 rounded hover:bg-slate-100 text-slate-600"><Minus size={16}/></button>
+                      <span className="w-8 text-center font-semibold">{modCountY}</span>
+                      <button onClick={() => setModCountY(modCountY + 1)} className="p-1.5 bg-white border border-slate-200 rounded hover:bg-slate-100 text-slate-600"><Plus size={16}/></button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Box Cấu hình Sắt & Khung viền */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-amber-100 border-t-4 border-t-amber-500">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-amber-800">
+                <Wrench size={20} />
+                Thông số Khung & Sắt
+              </h2>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Cộng thêm viền (cm)</label>
+                    <input 
+                      type="number" 
+                      value={frameMargin}
+                      onChange={(e) => setFrameMargin(Number(e.target.value))}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 outline-none focus:ring-2 focus:ring-amber-500 font-mono text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Cắt dư sắt (cm)</label>
+                    <input 
+                      type="number" 
+                      value={ironMargin}
+                      onChange={(e) => setIronMargin(Number(e.target.value))}
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 outline-none focus:ring-2 focus:ring-amber-500 font-mono text-sm"
+                    />
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Số thanh sắt giằng ngang</label>
+                  <div className="flex items-center gap-3">
+                    <button onClick={() => setHBarsCount(Math.max(1, hBarsCount - 1))} className="p-1.5 bg-slate-50 border border-slate-200 rounded hover:bg-slate-100"><Minus size={14}/></button>
+                    <span className="w-8 text-center font-mono text-sm font-semibold">{hBarsCount}</span>
+                    <button onClick={() => setHBarsCount(hBarsCount + 1)} className="p-1.5 bg-slate-50 border border-slate-200 rounded hover:bg-slate-100"><Plus size={14}/></button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Box Tính Vốn & Lợi Nhuận */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-emerald-100 border-t-4 border-t-emerald-500">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2 text-emerald-800">
+                <TrendingUp size={20} />
+                Tính Vốn & Lợi Nhuận (Nội bộ)
+              </h2>
+              
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Giá NHẬP 1 tấm</label>
+                    <input 
+                      type="number" 
+                      value={moduleCost}
+                      onChange={(e) => setModuleCost(Number(e.target.value))}
+                      step="1000"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-slate-600 mb-1">Tấm dự phòng</label>
+                    <input 
+                      type="number" 
+                      value={spareModules}
+                      onChange={(e) => setSpareModules(Number(e.target.value))}
+                      min="0"
+                      className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm"
+                    />
+                  </div>
+                </div>
+                
+                <div>
+                  <label className="block text-xs font-medium text-slate-600 mb-1">Chi phí khác (Nguồn, Card, Thi công...)</label>
+                  <input 
+                    type="number" 
+                    value={otherCost}
+                    onChange={(e) => setOtherCost(Number(e.target.value))}
+                    step="100000"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg p-2 outline-none focus:ring-2 focus:ring-emerald-500 font-mono text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          {/* Cột Phải: Kết Quả & Trực quan */}
+          <div className="lg:col-span-2 space-y-6">
+            
+            {/* Cards Thống Kê */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center">
+                <div className="flex items-center gap-2 text-slate-500 mb-2">
+                  <Ruler size={16} />
+                  <span className="text-xs font-medium uppercase tracking-wider">Kích Thước Thực</span>
+                </div>
+                <div className="text-xl font-bold text-slate-900">
+                  {actualWidth.toFixed(3)}m <span className="text-sm font-normal text-slate-400">x</span> {actualHeight.toFixed(3)}m
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center">
+                <div className="flex items-center gap-2 text-slate-500 mb-2">
+                  <Maximize size={16} />
+                  <span className="text-xs font-medium uppercase tracking-wider">Tổng Diện Tích</span>
+                </div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {totalArea.toFixed(2)} <span className="text-sm font-normal">m²</span>
+                </div>
+              </div>
+
+              <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center">
+                <div className="flex items-center gap-2 text-slate-500 mb-2">
+                  <Monitor size={16} />
+                  <span className="text-xs font-medium uppercase tracking-wider">Độ Phân Giải</span>
+                </div>
+                <div className="text-xl font-bold text-emerald-600">
+                  {resW} <span className="text-sm font-normal text-slate-400">x</span> {resH}
+                </div>
+                <div className="text-xs text-slate-400 mt-1">Tỷ lệ: {calcAspectRatio()}</div>
+              </div>
+
+              <div className="bg-white p-4 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-center">
+                <div className="flex items-center gap-2 text-slate-500 mb-2">
+                  <Layers size={16} />
+                  <span className="text-xs font-medium uppercase tracking-wider">Tổng Số Tấm</span>
+                </div>
+                <div className="text-2xl font-bold text-orange-500">
+                  {totalModulesForOrder} <span className="text-sm font-normal text-slate-500">tấm</span>
+                </div>
+                <div className="text-xs text-slate-400 mt-1">Gồm {spareModules} tấm dự phòng</div>
+              </div>
+            </div>
+
+            {/* Bản Vẽ Cắt Sắt & Khung Viền */}
+            <div className="bg-amber-50 rounded-2xl shadow-sm border border-amber-200 overflow-hidden">
+              <div className="p-4 bg-amber-100 border-b border-amber-200 flex items-center gap-2 text-amber-900 font-semibold">
+                <Scissors size={20} />
+                <h3>Bảng Kê Cắt Sắt & Kích Thước Khung Viền</h3>
+              </div>
+              <div className="p-5 grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+                <div className="space-y-4">
+                  <div className="bg-white p-4 rounded-xl border border-amber-100 shadow-sm">
+                    <p className="text-slate-500 mb-1">Kích thước phủ bì Khung Viền</p>
+                    <p className="text-lg font-bold text-slate-800 font-mono">
+                      {frameW.toFixed(3)}m <span className="text-sm text-slate-400 font-sans font-normal">x</span> {frameH.toFixed(3)}m
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1 italic">(Đã cộng {frameMargin}cm mỗi chiều)</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center border-b border-amber-200/50 pb-2">
+                    <div>
+                      <p className="font-semibold text-slate-800">Trục Ngang (Ghép {modCountX} tấm)</p>
+                      <p className="text-xs text-slate-500">Cần {vBarsCount} thanh đứng (cắt dài Cao + {ironMargin}cm)</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-amber-700">{vBarsCount} <span className="text-xs font-normal">thanh</span></p>
+                      <p className="font-mono font-semibold text-slate-800">{vBarsLength.toFixed(3)}m / thanh</p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex justify-between items-center pb-1">
+                    <div>
+                      <p className="font-semibold text-slate-800">Trục Cao (Ghép {modCountY} tấm)</p>
+                      <p className="text-xs text-slate-500">Cần {hBarsCount} thanh ngang (cắt dài Ngang + {ironMargin}cm)</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-bold text-amber-700">{hBarsCount} <span className="text-xs font-normal">thanh</span></p>
+                      <p className="font-mono font-semibold text-slate-800">{hBarsLength.toFixed(3)}m / thanh</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bảng Phân tích tài chính */}
+            <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+              {/* Box Báo giá khách */}
+              <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-5 text-white flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-white/20 rounded-xl shadow-inner hidden sm:block">
+                    <Banknote size={28} className="text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-blue-100 text-xs font-semibold uppercase tracking-wider mb-1">Giá bán báo khách</h3>
+                    <p className="text-sm text-blue-200">
+                      <span className="font-medium text-white">{totalArea.toFixed(2)} m²</span> × <span className="font-medium text-white">{pricePerSqm.toLocaleString('vi-VN')} đ/m²</span>
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-2xl md:text-3xl font-bold tracking-tight">
+                    {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND' }).format(estimatedCost)}
+                  </div>
+                </div>
+              </div>
+
+              {/* Box Tính vốn & Lãi */}
+              <div className="grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100 bg-slate-50">
+                <div className="p-5">
+                  <div className="flex items-center gap-2 mb-3">
+                    <PackageOpen size={18} className="text-slate-500"/>
+                    <h3 className="text-sm font-semibold text-slate-700">Tổng Vốn (Giá Nhập)</h3>
+                  </div>
+                  <div className="space-y-2 text-sm text-slate-600 mb-3">
+                    <div className="flex justify-between">
+                      <span>Tiền LED ({totalModulesForOrder} tấm):</span>
+                      <span className="font-mono">{totalModuleCost.toLocaleString('vi-VN')} đ</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Vật tư khác & Thi công:</span>
+                      <span className="font-mono">{otherCost.toLocaleString('vi-VN')} đ</span>
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t border-slate-200 flex justify-between items-end">
+                    <span className="text-sm font-medium text-slate-700">Tổng cộng:</span>
+                    <span className="text-lg font-bold text-slate-800 font-mono">
+                      {totalInvestment.toLocaleString('vi-VN')} đ
+                    </span>
+                  </div>
+                </div>
+
+                <div className="p-5 bg-emerald-50/50">
+                  <div className="flex items-center gap-2 mb-3">
+                    <TrendingUp size={18} className="text-emerald-600"/>
+                    <h3 className="text-sm font-semibold text-emerald-800">Lợi Nhuận Gộp</h3>
+                  </div>
+                  <div className="space-y-2 text-sm text-emerald-700/80 mb-3">
+                    <div className="flex justify-between">
+                      <span>Tiền lãi dự kiến:</span>
+                      <span className="font-mono">{grossProfit.toLocaleString('vi-VN')} đ</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Tỷ suất lợi nhuận (Margin):</span>
+                      <span className="font-mono font-bold bg-emerald-200/50 px-2 py-0.5 rounded text-emerald-700">
+                        {profitMargin.toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                  <div className="pt-2 border-t border-emerald-200/60 flex justify-between items-end">
+                    <span className="text-sm font-medium text-emerald-800">Thực nhận:</span>
+                    <span className="text-2xl font-bold text-emerald-600 font-mono">
+                      {grossProfit > 0 ? '+' : ''}{grossProfit.toLocaleString('vi-VN')} đ
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Khung mô phỏng trực quan */}
+            <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
+              <h3 className="text-md font-semibold mb-4 text-slate-800">Mô phỏng lắp đặt</h3>
+              
+              <div className="relative w-full bg-slate-100 rounded-xl flex items-center justify-center p-8 overflow-hidden min-h-[300px]">
+                {/* Visualizer box */}
+                <div 
+                  className="relative bg-slate-900 flex shadow-2xl transition-all duration-300 ring-4 ring-slate-800"
+                  style={{
+                    // Scaling logic to fit the box
+                    width: actualWidth >= actualHeight ? '100%' : `${(actualWidth/actualHeight)*100}%`,
+                    height: actualHeight >= actualWidth ? '100%' : 'auto',
+                    aspectRatio: `${actualWidth} / ${actualHeight}`,
+                    maxHeight: '400px',
+                    maxWidth: '100%'
+                  }}
+                >
+                  {/* Grid overlay */}
+                  <div 
+                    className="absolute inset-0 opacity-20 pointer-events-none"
+                    style={{
+                      display: 'grid',
+                      gridTemplateColumns: `repeat(${modCountX}, 1fr)`,
+                      gridTemplateRows: `repeat(${modCountY}, 1fr)`,
+                    }}
+                  >
+                    {Array.from({ length: activeModules }).map((_, i) => (
+                      <div key={i} className="border-[0.5px] border-blue-400"></div>
+                    ))}
+                  </div>
+
+                  {/* Screen Content Simulation */}
+                  <div className="absolute inset-0 flex flex-col items-center justify-center text-white opacity-80 pointer-events-none">
+                    <Monitor size={48} className="mb-2 opacity-50" />
+                    <span className="font-mono text-lg font-bold tracking-widest">{resW} x {resH}</span>
+                    <span className="text-xs opacity-70 uppercase tracking-widest mt-1">Pixels</span>
+                  </div>
+                </div>
+
+                {/* Kích thước notes */}
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-700 shadow-sm border border-slate-200">
+                  Ngang: {actualWidth.toFixed(3)}m ({modCountX} tấm)
+                </div>
+                <div className="absolute left-2 top-1/2 -translate-y-1/2 -rotate-90 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-slate-700 shadow-sm border border-slate-200 origin-center whitespace-nowrap">
+                  Cao: {actualHeight.toFixed(3)}m ({modCountY} tấm)
+                </div>
+              </div>
+              
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  );
+}
